@@ -1,3 +1,4 @@
+from enum import Enum
 from PySide6.QtCore import QDate
 
 
@@ -8,7 +9,15 @@ class Loan_record:
         self.date: QDate = date
         self.amount: int = amount
 
+
 class Force_two_decimal(float):
     # For currency only
     def __str__(self):
-        return f'{self:.2f}'  
+        return f'{self:.2f}'
+
+
+class EQUAL_PRINCIPAL:
+    str = '等额本金'
+
+class EQUAL_INTEREST:
+    str = '等额本息'

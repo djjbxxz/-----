@@ -1,18 +1,10 @@
 import numpy as np
-import time
 import datetime
-import calendar
 from base import Loan_record
 from PySide6.QtCore import QDate
-datetime.datetime.now()
-#月利率=年利率 ÷ 12
-#日利率=月利率 ÷ 30
-#日利率=年利率 ÷ 360
-Annual_interest_rate = 0.04  # 4%
-Monthly_interest_rate = Annual_interest_rate/12
-
-principal = 100000
-payback_months = 24
+# 月利率=年利率 ÷ 12
+# 日利率=月利率 ÷ 30
+# 日利率=年利率 ÷ 360
 
 
 # 等额本金equal principal
@@ -41,9 +33,12 @@ def equal_interest_payment(principal, payback_months, Monthly_interest_rate) -> 
     return payment
 
 
-class A:
+class PaymentCalculator:
     def __init__(self, bill_paid_startdate: QDate,
-                 pay_period: int, loan_list: list[Loan_record], year_interest: float, payback_months: int) -> None:
+                 pay_period: int,
+                 loan_list: list[Loan_record],
+                 year_interest: float,
+                 payback_months: int) -> None:
         self.paid_startdate = bill_paid_startdate
         self.pay_period = pay_period
         self.loan_list = loan_list
@@ -52,28 +47,35 @@ class A:
         self.month_interest = year_interest/12
         self.payback_months = payback_months
 
-    def launch(self):
-        #Equal principal
-        # 前期利息（开始还款之前产生的利息）
+    def early_interest(self) -> float:
+        # 前期总利息（开始还款之前产生的利息）
         interest_before_pay_start = 0
-        payment = np.zeros(shape=(self.payback_months), dtype=float)
         for loan in self.loan_list:
             month = (self.paid_startdate.year()-loan.date.year())*12 + \
                 (self.paid_startdate.month()-loan.date.month())
-            if month > 0:
-                month -= 1
+            assert month > 0, "还款日必须在借款时间之后"
+            month -= 1
             interest_before_pay_start += month*self.month_interest*loan.amount
+        return interest_before_pay_start
 
+    def equal_principal(self) -> np.ndarray[float]:
+        # 等额本金
+        payment = np.zeros(shape=(self.payback_months), dtype=float)
         for loan in self.loan_list:
             payment += equal_principal(principal=loan.amount,
                                        payback_months=self.payback_months,
                                        Monthly_interest_rate=self.month_interest)
-        payment+=interest_before_pay_start/self.payback_months
-        return payment
-        pass
+        # spread out early interest equally over entire payback months
+        payment += self.early_interest()/self.payback_months
+        return payment.round(2)
 
-
-if __name__ == "__main__":
-    print(np.array(equal_principal(principal, payback_months, Monthly_interest_rate)))
-    print("--------------")
-    print(equal_interest_payment(principal, payback_months, Monthly_interest_rate))
+    def equal_interest(self) -> np.ndarray[float]:
+        # 等额本息
+        payment = np.zeros(shape=(self.payback_months), dtype=float)
+        for loan in self.loan_list:
+            payment += equal_interest_payment(principal=loan.amount,
+                                              payback_months=self.payback_months,
+                                              Monthly_interest_rate=self.month_interest)
+        # spread out early interest equally over entire payback months
+        payment += self.early_interest()/self.payback_months
+        return payment.round(2)

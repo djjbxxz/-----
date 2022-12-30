@@ -1,11 +1,11 @@
 import sys
 from PySide6.QtWidgets import (QLineEdit, QPushButton, QApplication, QTableWidget, QTableWidgetItem, QLabel, QDateEdit, QGroupBox,
-                               QVBoxLayout, QHBoxLayout, QDialog)
+                               QVBoxLayout, QHBoxLayout, QDialog, QComboBox)
 from pay_bill_cal import *
 from PySide6.QtCore import QDate
 from PySide6.QtCore import Qt
 from utils import isDebug
-from base import Force_two_decimal, Loan_record
+from base import Force_two_decimal, Loan_record, EQUAL_PRINCIPAL, EQUAL_INTEREST
 
 
 class Payment_record(QDialog):
@@ -14,11 +14,12 @@ class Payment_record(QDialog):
     will appear as a free-floating window as we want.
     """
 
-    def __init__(self, payment_plan:np.ndarray,parent=None):
+    def __init__(self, payment_plan: np.ndarray, parent=None, title=None):
         super().__init__(parent)
         # if not isDebug():
         #     self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.resize(260,400)
+        self.resize(260, 400)
+        self.setWindowTitle(title)
         layout = QVBoxLayout()
 
         table = QTableWidget()
@@ -106,6 +107,7 @@ class Form(QDialog):
         payment_setting_layout.addWidget(self._bill_pay_startdate)
         payment_setting_layout.addWidget(QLabel("还款间隔(月)"))
         self._bill_pay_period = QLineEdit("1")
+        self._bill_pay_period.setDisabled(True)
         self._bill_pay_period.setFixedWidth(40)
         self._bill_pay_period.setMaxLength(3)
         payment_setting_layout.addWidget(self._bill_pay_period)
@@ -119,6 +121,10 @@ class Form(QDialog):
         self.payback_months.setFixedWidth(50)
         self.payback_months.setMaxLength(4)
         payment_setting_layout.addWidget(self.payback_months)
+        payment_setting_layout.addWidget(QLabel("还款方式"))
+        self.payment_method = QComboBox()
+        self.payment_method.addItems(['等额本金', '等额本息'])
+        payment_setting_layout.addWidget(self.payment_method)
 
         # 添加借款记录
         groupbox_loan_record = QGroupBox("添加借款记录")
@@ -161,8 +167,8 @@ class Form(QDialog):
 
     def Calculate(self):
         # close last windows (if exists)
-        if hasattr(self, 'payment_widget') and not self.payment_widget is None:
-            self.payment_widget.close()
+        # if hasattr(self, 'payment_widget') and not self.payment_widget is None:
+        #     self.payment_widget.close()
 
         # gather payment configuration
         try:
@@ -182,22 +188,31 @@ class Form(QDialog):
             if (pay_startdate.toPython()-loan.date.toPython()).days < 30:
                 legal_flag = False
 
-
-        #check illgel flag
+        # check illgel flag
         if not legal_flag:
             return
 
-
         # call to execute
-        a = A(bill_paid_startdate=pay_startdate,
-              pay_period=pay_period,
-              loan_list=loan_record,
-              year_interest=year_interest,
-              payback_months=payback_months)
+        calc = PaymentCalculator(bill_paid_startdate=pay_startdate,
+                                 pay_period=pay_period,
+                                 loan_list=loan_record,
+                                 year_interest=year_interest,
+                                 payback_months=payback_months)
 
-        payment_plan = a.launch()
-        payment_plan = payment_plan.round(2)
-        self.payment_widget = Payment_record(parent = self,payment_plan=payment_plan)
+        # payment method
+        text = self.payment_method.currentText()
+        if text == EQUAL_INTEREST.str:
+            launch = calc.equal_interest
+        elif text == EQUAL_PRINCIPAL.str:
+            launch = calc.equal_principal
+        else:
+            launch = None
+        # execute
+        payment_plan = launch()
+        self.payment_widget = Payment_record(
+            parent=self, 
+            payment_plan=payment_plan,
+            title=text)
         self.payment_widget.show()
 
     def add_loan_record(self):
