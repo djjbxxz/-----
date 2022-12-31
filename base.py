@@ -8,7 +8,9 @@ class Loan_record:
             amount, int), "Wrong type!!"
         self.date: QDate = date
         self.amount: int = amount
-
+    
+    def __repr__(self):
+        return f'{self.date.toPython().strftime("%Y/%m/%d"), self.amount}'
 
 class Force_two_decimal(float):
     # For currency only

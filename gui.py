@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QLineEdit, QPushButton, QApplication, QTableWidge
 from pay_bill_cal import *
 from PySide6.QtCore import QDate
 from PySide6.QtCore import Qt
+from record_rw import read, save
 from utils import isDebug
 from base import Force_two_decimal, Loan_record, EQUAL_PRINCIPAL, EQUAL_INTEREST
 
@@ -86,7 +87,14 @@ class Load_record_table_widget:
 
     def print_loan_record(self):
         for each in self._loan_record:
-            print(each.date.toString(), each.amount)
+            print(each)
+
+    def read(self):
+        self._loan_record = read()
+        self.Refresh_widget()
+
+    def save(self):
+        save(self._loan_record)
 
 
 class Form(QDialog):
@@ -151,6 +159,12 @@ class Form(QDialog):
         del_record_button.setShortcut(Qt.Key.Key_Delete)
         del_record_button.clicked.connect(self.loan_table.del_record)
         add_loan_record.addWidget(del_record_button)
+        import_button = QPushButton("导入记录")
+        import_button.clicked.connect(self.loan_table.read)
+        add_loan_record.addWidget(import_button)
+        export_button = QPushButton("导出记录")
+        export_button.clicked.connect(self.loan_table.save)
+        add_loan_record.addWidget(export_button)
 
         # 借款记录表格
         loan_record_layout.addWidget(self.loan_table.tabel_widget)
@@ -210,7 +224,7 @@ class Form(QDialog):
         # execute
         payment_plan = launch()
         self.payment_widget = Payment_record(
-            parent=self, 
+            parent=self,
             payment_plan=payment_plan,
             title=text)
         self.payment_widget.show()
