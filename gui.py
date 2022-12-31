@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import (QLineEdit, QPushButton, QApplication, QTableWidget, QTableWidgetItem, QLabel, QDateEdit, QGroupBox,
+from PySide6.QtWidgets import (QLineEdit, QPushButton, QApplication, QTableWidget, QLabel, QDateEdit, QGroupBox,
                                QVBoxLayout, QHBoxLayout, QDialog, QComboBox)
 from pay_bill_cal import *
 from PySide6.QtCore import QDate
@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt
 from record_rw import read, save
 from utils import isDebug
 from base import Force_two_decimal, Loan_record, EQUAL_PRINCIPAL, EQUAL_INTEREST
-
+from base import QTableWidgetItem_Uneditable as QTableWidgetItem
 
 class Payment_record(QDialog):
     """
@@ -24,6 +24,7 @@ class Payment_record(QDialog):
         layout = QVBoxLayout()
 
         table = QTableWidget()
+        table.verticalHeader().setVisible(False)
         table.setRowCount(len(payment_plan))
         table.setColumnCount(2)
         table.setHorizontalHeaderLabels(["期数", "应还数额"])
@@ -73,7 +74,6 @@ class Load_record_table_widget:
             date: datetime.date = record.date.toPython()
             date_str = date.strftime(time_strformat_CHNS)
             amount = record.amount
-
             item_date = QTableWidgetItem(date_str)
             item_amount = QTableWidgetItem(str(amount))
             self.tabel_widget.setItem(index, 0, item_date)
@@ -150,12 +150,10 @@ class Form(QDialog):
         self._loan_add_amount = QLineEdit("0")
         add_loan_record.addWidget(self._loan_add_amount)
         add_record_button = QPushButton("添加(Enter)")
-        add_record_button.setDefault(True)
         add_record_button.setShortcut(Qt.Key.Key_Enter)
         add_record_button.clicked.connect(self.add_loan_record)
         add_loan_record.addWidget(add_record_button)
         del_record_button = QPushButton("删除(Del)")
-        del_record_button.setDefault(True)
         del_record_button.setShortcut(Qt.Key.Key_Delete)
         del_record_button.clicked.connect(self.loan_table.del_record)
         add_loan_record.addWidget(del_record_button)

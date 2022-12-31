@@ -22,6 +22,7 @@ def save(records: list[Loan_record]):
         worksheet.write(index, 0, date)
         worksheet.write(index, 1, amount)
     workbook.save(filepath)
+    print(f'save to {filepath}')
 
 
 def read() -> list[Loan_record]:
@@ -35,4 +36,5 @@ def read() -> list[Loan_record]:
         records.append(
             Loan_record(QDate(*tuple([int(a)for a in date.split('/')])),
                         int(amount)))
+    print(f'read from {filepath}')
     return records
