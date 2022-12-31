@@ -19,7 +19,7 @@ class Payment_record(QDialog):
         super().__init__(parent)
         # if not isDebug():
         #     self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.resize(260, 400)
+        self.resize(240, 400)
         self.setWindowTitle(title)
         layout = QVBoxLayout()
 
