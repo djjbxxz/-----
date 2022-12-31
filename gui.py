@@ -1,39 +1,48 @@
 import sys
 from PySide6.QtWidgets import (QLineEdit, QPushButton, QApplication, QTableWidget, QLabel, QDateEdit, QGroupBox,
                                QVBoxLayout, QHBoxLayout, QDialog, QComboBox)
-from pay_bill_cal import *
+from pay_bill_cal import EQUAL_INTEREST, EQUAL_PRINCIPAL, PaymentCalculator
 from PySide6.QtCore import QDate
 from PySide6.QtCore import Qt
 from record_rw import read, save
 from utils import isDebug
-from base import Force_two_decimal, Loan_record, EQUAL_PRINCIPAL, EQUAL_INTEREST
+from base import Force_two_decimal, Loan_record
 from base import QTableWidgetItem_Uneditable as QTableWidgetItem
+import numpy as np
 
 
 class Payment_record(QDialog):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
 
     def __init__(self, payment_plan: np.ndarray, parent=None, title=None):
         super().__init__(parent)
         # if not isDebug():
         #     self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.resize(240, 400)
         self.setWindowTitle(title)
         layout = QVBoxLayout()
 
         table = QTableWidget()
         table.verticalHeader().setVisible(False)
-        table.setRowCount(len(payment_plan))
-        table.setColumnCount(2)
-        table.setHorizontalHeaderLabels(["期数", "应还数额"])
-        for index, i in enumerate(payment_plan):
-            num_periods = QTableWidgetItem(str(index+1))
-            amount = QTableWidgetItem(str(Force_two_decimal(i)))
-            table.setItem(index, 0, num_periods)
-            table.setItem(index, 1, amount)
+        num_records = len(payment_plan[0])
+        height = (num_records+1)*32+5
+        self.resize(540, height)
+        table.setRowCount(num_records+1)
+        payment_all, payment_principal, payment_interest,payment_early_interest = payment_plan
+        table.setColumnCount(5)
+        table.setHorizontalHeaderLabels(["期数", "月供", "月供本金", "月供利息","前期利息"])
+        for index,total_amount, principal, interest,early_interest in zip(range(num_records),*payment_plan):
+            table.setItem(index, 0, QTableWidgetItem(str(index+1)))
+            table.setItem(index, 1, QTableWidgetItem(str(Force_two_decimal(total_amount))))
+            table.setItem(index, 2, QTableWidgetItem(str(Force_two_decimal(principal))))
+            table.setItem(index, 3, QTableWidgetItem(str(Force_two_decimal(interest))))
+            table.setItem(index, 4, QTableWidgetItem(str(Force_two_decimal(early_interest))))
+        
+        # In total
+        table.setItem(num_records, 0, QTableWidgetItem("合计"))
+        table.setItem(num_records, 1, QTableWidgetItem(str(Force_two_decimal(payment_all.sum()))))
+        table.setItem(num_records, 2, QTableWidgetItem(str(Force_two_decimal(payment_principal.sum()))))
+        table.setItem(num_records, 3, QTableWidgetItem(str(Force_two_decimal(payment_interest.sum()))))
+        table.setItem(num_records, 4, QTableWidgetItem(str(Force_two_decimal(payment_early_interest.sum()))))
+
         self.table = table
         layout.addWidget(self.table)
         self.setLayout(layout)
@@ -200,28 +209,32 @@ class Form(QDialog):
         for loan in self.loan_table._loan_record:
             if (pay_startdate.toPython()-loan.date.toPython()).days < 30:
                 legal_flag = False
+                break
 
         # check illgel flag
         if not legal_flag:
+            print("data error")
             return
+
+        # payment method
+        text = self.payment_method.currentText()
+        if text == EQUAL_INTEREST.str:
+            payback_method = EQUAL_INTEREST
+        elif text == EQUAL_PRINCIPAL.str:
+            payback_method = EQUAL_PRINCIPAL
+        else:
+            payback_method = None
 
         # call to execute
         calc = PaymentCalculator(bill_paid_startdate=pay_startdate,
                                  pay_period=pay_period,
                                  loan_list=loan_record,
                                  year_interest=year_interest,
-                                 payback_months=payback_months)
+                                 payback_months=payback_months,
+                                 payback_method=payback_method)
 
-        # payment method
-        text = self.payment_method.currentText()
-        if text == EQUAL_INTEREST.str:
-            launch = calc.equal_interest
-        elif text == EQUAL_PRINCIPAL.str:
-            launch = calc.equal_principal
-        else:
-            launch = None
         # execute
-        payment_plan = launch()
+        payment_plan = calc.launch()
         self.payment_widget = Payment_record(
             parent=self,
             payment_plan=payment_plan,

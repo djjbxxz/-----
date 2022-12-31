@@ -1,4 +1,3 @@
-from enum import Enum
 from PySide6.QtCore import QDate
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import  QTableWidgetItem
@@ -25,8 +24,8 @@ class QTableWidgetItem_Uneditable(QTableWidgetItem):
         self.setTextAlignment(Qt.AlignmentFlag.AlignHCenter)
 
 
-class EQUAL_PRINCIPAL:
+class EQUAL_PRINCIPAL_str:
     str = '等额本金'
 
-class EQUAL_INTEREST:
+class EQUAL_INTEREST_str:
     str = '等额本息'
