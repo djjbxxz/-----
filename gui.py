@@ -9,6 +9,7 @@ from utils import isDebug
 from base import Force_two_decimal, Loan_record, EQUAL_PRINCIPAL, EQUAL_INTEREST
 from base import QTableWidgetItem_Uneditable as QTableWidgetItem
 
+
 class Payment_record(QDialog):
     """
     This "window" is a QWidget. If it has no parent, it
@@ -42,8 +43,7 @@ class Load_record_table_widget:
 
     def __init__(self) -> None:
         self.tabel_widget = QTableWidget()
-        self._loan_record: list[Loan_record] = [
-            Loan_record(QDate(2020, 1, 1), 10000)]
+        self._loan_record: list[Loan_record] = []
         self.table_items_widget: dict[Loan_record:tuple[QTableWidgetItem, QTableWidgetItem]] = {
         }
         self.Refresh_widget()
@@ -104,7 +104,7 @@ class Form(QDialog):
         # if not isDebug():
         #     self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         layout = QVBoxLayout()
-
+        self.setWindowTitle("还款计算器")
         # 还款设置
         payment_setting = QGroupBox("还款设置")
         payment_setting_layout = QHBoxLayout()
@@ -148,6 +148,7 @@ class Form(QDialog):
         add_loan_record.addWidget(self._loan_add_date)
         add_loan_record.addWidget(QLabel("借款数额(元)"))
         self._loan_add_amount = QLineEdit("0")
+        self._loan_add_amount.setFixedWidth(60)
         add_loan_record.addWidget(self._loan_add_amount)
         add_record_button = QPushButton("添加(Enter)")
         add_record_button.setShortcut(Qt.Key.Key_Enter)
