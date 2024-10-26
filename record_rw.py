@@ -12,8 +12,11 @@ filepath = os.path.join(working_dir, default_filename)
 # 数据存储格式：第一列是时间，第二列是数值
 # Save到当前工作目录
 
+def sort_by_date(records: list[Loan_record]) -> list[Loan_record]:
+    return sorted(records, key=lambda x: x.date)
 
 def save(records: list[Loan_record]):
+    records = sort_by_date(records)
     workbook = xlwt.Workbook(encoding='ascii')
     worksheet = workbook.add_sheet("Sheet1")
     for index, record in enumerate(records):
@@ -36,5 +39,6 @@ def read() -> list[Loan_record]:
         records.append(
             Loan_record(QDate(*tuple([int(a)for a in date.split('/')])),
                         int(amount)))
+    records = sort_by_date(records)
     print(f'read from {filepath}')
     return records
